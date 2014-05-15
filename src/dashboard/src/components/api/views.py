@@ -18,6 +18,7 @@
 # stdlib, alphabetical
 import base64
 import json
+import shutil
 import os
 
 # Core Django, alphabetical
@@ -277,22 +278,15 @@ def unapproved_transfers(request):
                 response['message'] = 'Fetched unapproved transfers successfully.'
 
                 if error is not None:
-                    return django.http.HttpResponseServerError(
-                        json.dumps(response),
-                        mimetype='application/json'
-                    )
+                    return helpers.json_response(response, status_code=500)
                 else:
                     return helpers.json_response(response)
         else:
             response['message'] = auth_error
             response['error'] = True
-            return django.http.HttpResponseForbidden(
-                json.dumps(response),
-                mimetype='application/json'
-            )
+            return helpers.json_response(response, status_code=403)
     else:
-        return django.http.HttpResponseNotAllowed(['GET'])
-
+        return django.http.HttpResponseNotAllowed(permitted_methods=['GET'])
 
 def approve_transfer(request):
     # Example: curl --data \
@@ -313,10 +307,7 @@ def approve_transfer(request):
             if error is not None:
                 response['message'] = error
                 response['error'] = True
-                return django.http.HttpResponseServerError(
-                    json.dumps(response),
-                    mimetype='application/json'
-                )
+                return helpers.json_response(response, status_code=500)
             else:
                 response['message'] = 'Approval successful.'
                 response['uuid'] = unit_uuid
@@ -324,12 +315,9 @@ def approve_transfer(request):
         else:
             response['message'] = auth_error
             response['error'] = True
-            return django.http.HttpResponseForbidden(
-                json.dumps(response),
-                mimetype='application/json'
-            )
+            return helpers.json_response(response, status_code=403)
     else:
-        return django.http.HttpResponseNotAllowed(['POST'])
+        return django.http.HttpResponseNotAllowed(permitted_methods=['POST'])
 
 
 def get_modified_standard_transfer_path(transfer_type=None):
@@ -402,3 +390,41 @@ def approve_transfer_via_mcp(directory, transfer_type, user_id):
         error = 'Please specify a transfer directory.'
 
     return error, unit_uuid
+
+
+def start_reingest(request):
+    """
+    Endpoint to approve reingest of an AIP.
+
+    Expects a POST request with the `uuid` of the SIP, and the `name`, which is
+    also the directory in %sharedPath%tmp where the SIP is found.
+
+    Example usage: curl --data "username=demo&api_key=<API key>&name=test-efeb95b4-5e44-45a4-ab5a-9d700875eb60&uuid=efeb95b4-5e44-45a4-ab5a-9d700875eb60"  http://localhost/api/ingest/reingest
+    """
+    if request.method == 'POST':
+        error = authenticate_request(request)
+        if error:
+            response = {'error': True, 'message': error}
+            return helpers.json_response(response, status_code=403)
+        sip_name = request.POST.get('name')
+        sip_uuid = request.POST.get('uuid')
+        if not all([sip_name, sip_uuid]):
+            response = {'error': True, 'message': '"name" and "uuid" are required.'}
+            return helpers.json_response(response, status_code=400)
+        # TODO Clear DB of residual stuff related to SIP
+        # Move to watched directory
+        shared_directory_path = helpers.get_server_config_value('sharedDirectory')
+        source = os.path.join(shared_directory_path, 'tmp', sip_name)
+        dest = os.path.join(shared_directory_path, 'watchedDirectories', 'system', 'reingestAIP', '')
+        try:
+            shutil.move(source, dest)
+        except shutil.Error as e:
+            error = e.message
+        if error:
+            response = {'error': True, 'message': error}
+            return helpers.json_response(response, status_code=500)
+        else:
+            response = {'message': 'Approval successful.'}
+            return helpers.json_response(response)
+    else:
+        return django.http.HttpResponseNotAllowed(permitted_methods=['POST'])
