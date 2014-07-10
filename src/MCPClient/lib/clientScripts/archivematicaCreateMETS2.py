@@ -395,32 +395,33 @@ def createTechMD(fileUUID):
     # Derivations
     derivations = Derivation.objects.filter(source_file_id=fileUUID)
     for derivation in derivations:
-        relationship = etree.SubElement(object, ns.premisBNS + "relationship")
-        etree.SubElement(relationship, ns.premisBNS + "relationshipType").text = "derivation"
-        etree.SubElement(relationship, ns.premisBNS + "relationshipSubType").text = "is source of"
+        if derivation.event:
+            relationship = etree.SubElement(object, ns.premisBNS + "relationship")
+            etree.SubElement(relationship, ns.premisBNS + "relationshipType").text = "derivation"
+            etree.SubElement(relationship, ns.premisBNS + "relationshipSubType").text = "is source of"
 
-        relatedObjectIdentification = etree.SubElement(relationship, ns.premisBNS + "relatedObjectIdentification")
-        etree.SubElement(relatedObjectIdentification, ns.premisBNS + "relatedObjectIdentifierType").text = "UUID"
-        etree.SubElement(relatedObjectIdentification, ns.premisBNS + "relatedObjectIdentifierValue").text = derivation.derived_file_id
+            relatedObjectIdentification = etree.SubElement(relationship, ns.premisBNS + "relatedObjectIdentification")
+            etree.SubElement(relatedObjectIdentification, ns.premisBNS + "relatedObjectIdentifierType").text = "UUID"
+            etree.SubElement(relatedObjectIdentification, ns.premisBNS + "relatedObjectIdentifierValue").text = derivation.derived_file_id
 
-        relatedEventIdentification = etree.SubElement(relationship, ns.premisBNS + "relatedEventIdentification")
-        etree.SubElement(relatedEventIdentification, ns.premisBNS + "relatedEventIdentifierType").text = "UUID"
-        etree.SubElement(relatedEventIdentification, ns.premisBNS + "relatedEventIdentifierValue").text = derivation.event_id
+            relatedEventIdentification = etree.SubElement(relationship, ns.premisBNS + "relatedEventIdentification")
+            etree.SubElement(relatedEventIdentification, ns.premisBNS + "relatedEventIdentifierType").text = "UUID"
+            etree.SubElement(relatedEventIdentification, ns.premisBNS + "relatedEventIdentifierValue").text = derivation.event_id
 
     derivations = Derivation.objects.filter(derived_file_id=fileUUID)
     for derivation in derivations:
-        relationship = etree.SubElement(object, ns.premisBNS + "relationship")
-        etree.SubElement(relationship, ns.premisBNS + "relationshipType").text = "derivation"
-        etree.SubElement(relationship, ns.premisBNS + "relationshipSubType").text = "has source"
+        if derivation.event:
+            relationship = etree.SubElement(object, ns.premisBNS + "relationship")
+            etree.SubElement(relationship, ns.premisBNS + "relationshipType").text = "derivation"
+            etree.SubElement(relationship, ns.premisBNS + "relationshipSubType").text = "has source"
 
-        relatedObjectIdentification = etree.SubElement(relationship, ns.premisBNS + "relatedObjectIdentification")
-        etree.SubElement(relatedObjectIdentification, ns.premisBNS + "relatedObjectIdentifierType").text = "UUID"
-        etree.SubElement(relatedObjectIdentification, ns.premisBNS + "relatedObjectIdentifierValue").text = derivation.source_file_id
+            relatedObjectIdentification = etree.SubElement(relationship, ns.premisBNS + "relatedObjectIdentification")
+            etree.SubElement(relatedObjectIdentification, ns.premisBNS + "relatedObjectIdentifierType").text = "UUID"
+            etree.SubElement(relatedObjectIdentification, ns.premisBNS + "relatedObjectIdentifierValue").text = derivation.source_file_id
 
-        relatedEventIdentification = etree.SubElement(relationship, ns.premisBNS + "relatedEventIdentification")
-        etree.SubElement(relatedEventIdentification, ns.premisBNS + "relatedEventIdentifierType").text = "UUID"
-        etree.SubElement(relatedEventIdentification, ns.premisBNS + "relatedEventIdentifierValue").text = derivation.event_id
-
+            relatedEventIdentification = etree.SubElement(relationship, ns.premisBNS + "relatedEventIdentification")
+            etree.SubElement(relatedEventIdentification, ns.premisBNS + "relatedEventIdentifierType").text = "UUID"
+            etree.SubElement(relatedEventIdentification, ns.premisBNS + "relatedEventIdentifierValue").text = derivation.event_id
     return ret
 
 def createDigiprovMD(fileUUID):
