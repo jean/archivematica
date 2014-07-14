@@ -86,6 +86,15 @@ def atom_dips(request):
     upload_setting = models.StandardTaskConfig.objects.get(execute="upload-qubit_v0.0")
     form = AtomSettingsForm(request.POST or None, instance=upload_setting)
     if form.is_valid():
+        def optionify(field):
+            option = "--{}".format(field.replace("_", "-"))
+            value = getattr(form, field)
+            return "{}={}".format(option, value)
+
+        opts = [optionify(field) for field, _ in AtomSettingsForm.base_fields
+                if getattr(form, field)]
+        arguments = " \\\n".join(opts)
+
         form.save()
         messages.info(request, 'Saved.')
 
