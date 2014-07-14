@@ -24,17 +24,8 @@ from django.conf import settings
 from components.administration.models import ArchivistsToolkitConfig
 
 class AtomSettingsForm(forms.ModelForm):
-    url = forms.CharField(required=True, widget=TextInput(attrs=settings.INPUT_ATTRS))
-    email = forms.CharField(required=True, widget=TextInput(attrs=settings.INPUT_ATTRS))
-    password = forms.CharField(required=True, widget=TextInput(attrs=settings.INPUT_ATTRS))
-    uuid = forms.CharField(required=True, widget=TextInput(attrs=settings.INPUT_ATTRS))
-    rsync_target = forms.CharField(widget=TextInput(attrs=settings.INPUT_ATTRS))
-    rsync_command = forms.CharField(widget=TextInput(attrs=settings.INPUT_ATTRS))
-    version = forms.CharField(widget=TextInput(attrs=settings.INPUT_ATTRS))
-    debug = forms.CharField(widget=TextInput(attrs=settings.INPUT_ATTRS))
-
     class Meta:
-        model = models.StandardTaskConfig
+        model = models.AtomDIPUploadSettings
 
 class AgentForm(forms.ModelForm):
     identifiervalue = forms.CharField(required=True, widget=TextInput(attrs=settings.INPUT_ATTRS))

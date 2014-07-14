@@ -688,3 +688,25 @@ class TaxonomyTerm(models.Model):
 
     def __unicode__(self):
         return self.term
+
+class AtomDIPUploadSettings(models.Model):
+    id = UUIDPkField()
+    url = models.CharField(max_length=255,
+                           help_text="URL where the Qubit index.php frontend lives, SWORD services path will be appended.")
+    email = models.CharField(max_length=255,
+                             help_text="E-mail account used to log into Qubit.")
+    password = models.CharField(max_length=255,
+                                help_text="Password linked to your e-mail account.")
+    uuid = models.CharField(max_length=36,
+                            help_text="Use this wildcard: %SIPUUID%. Archivematica will do the rest for you.")
+    rsync_target = models.CharField(max_length=255, blank=True,
+                                    help_text="The DIP can be sent with Rsync to a remote host before is deposited in Qubit. This is the destination value passed to Rsync (see man 1 rsync). For example: foobar.com:~/dips/.")
+    rsync_command = models.CharField(max_length=255, blank=True,
+                                     help_text="If --rsync-target is used, you can use this argument to specify the remote shell manually. For example: ssh -p 22222 -l user.")
+    version = models.CharField(max_length=10, blank=True,
+                               help_text="Use 2 if you are using AtoM 2.")
+    debug = models.BooleanField(default=False,
+                                help_text="Show additional details.")
+
+    class Meta:
+        db_table = u'AtomDIPUploadSettings'
