@@ -20,7 +20,9 @@ import logging
 import mimetypes
 import os
 import pprint
+import requests
 import urllib
+from urlparse import urljoin
 import json
 
 from django.utils.dateformat import format
@@ -204,6 +206,32 @@ def get_server_config_value(field):
         return config.get('MCPServer', field)
     except:
         return ''
+
+def get_atom_levels_of_description(clear=True):
+    url = get_setting('dip_upload_atom_url')
+    if not url:
+        raise Exception("AtoM URL not defined!")
+
+    auth = (
+        get_setting('dip_upload_atom_email'),
+        get_setting('dip_upload_atom_password'),
+    )
+    if not auth:
+        raise Exception("AtoM authentication settings not defined!")
+
+    dest = urljoin(url, 'api/taxonomies/34')
+    response = requests.get(dest, params={'culture': 'en'}, auth=auth)
+    if response.status_code == 200:
+        if clear:
+            models.LevelOfDescription.objects.all().delete()
+
+        levels = response.json()
+        for level in levels:
+            lod = models.LevelOfDescription(name=level['name'])
+            lod.save()
+    else:
+        raise Exception("Unable to fetch levels of description from AtoM!")
+
 
 def redirect_with_get_params(url_name, *args, **kwargs):
     url = reverse(url_name, args = args)
