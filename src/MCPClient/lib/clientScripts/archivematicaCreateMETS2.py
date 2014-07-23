@@ -1005,7 +1005,7 @@ if __name__ == '__main__':
 
     root.append(fileSec)
     root.append(structMap)
-    if arranged_structmap:
+    if arranged_structmap is not None:
         root.append(arranged_structmap)
     for structMapIncl in getIncludedStructMap(baseDirectoryPath):
         root.append(structMapIncl)
