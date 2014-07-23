@@ -27,4 +27,5 @@ urlpatterns = patterns('components.api.views',
     (r'ingest/waiting', 'waiting_for_user_input'),
     (r'administration/dips/atom/levels/$', 'get_levels_of_description'),
     (r'administration/dips/atom/fetch_levels/$', 'fetch_levels_of_description_from_atom'),
+    (r'filesystem/metadata/(?P<sip_uuid>' + settings.UUID_REGEX + ')/$', 'add_sip_hierarchy'),
 )
