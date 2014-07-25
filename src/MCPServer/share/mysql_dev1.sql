@@ -702,3 +702,10 @@ UPDATE MicroServiceChainLinks SET defaultNextChainLink=@MoveSIPToFailedLink WHER
 -- of moving to the next link in normalization.
 UPDATE MicroServiceChainLinks SET defaultNextChainLink='83484326-7be7-4f9f-b252-94553cd42370' WHERE pk='2dd53959-8106-457d-a385-fee57fc93aa9';
 -- /Issue 7012 - Normalization ID failure
+
+-- Issue 7031 - AIP preparation failure
+-- Insert a new node to catch AIP preparation failures, like indexing,
+-- and allow the administrator to choose whether to retry or reject the AIP.
+INSERT INTO TasksConfigs (pk, taskType, taskTypePKReference, description) VALUES ('19d0d956-3e4e-426b-b41b-03b4d9ec6904', '61fb3874-8ef6-49d3-8a2d-3cb66e86a30c', '', 'Storing or indexing AIP failed. Retry?');
+INSERT INTO MicroServiceChainLinks (pk, microserviceGroup, defaultExitMessage, currentTask, defaultNextChainLink) VALUES ('ee28e373-36de-41d9-bdfa-cdb7381b21b6', 'Prepare AIP', 'Failed', '19d0d956-3e4e-426b-b41b-03b4d9ec6904', '');
+-- /Issue 7031 - AIP preparation failure
