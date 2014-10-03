@@ -32,6 +32,8 @@ import traceback
 
 import archivematicaXMLNamesSpace as ns
 
+import django
+django.setup()
 # dashboard
 from django.contrib.auth.models import User
 from main.models import Agent, Derivation, DublinCore, Event, File, FileID, FPCommandOutput, SIP, Transfer
