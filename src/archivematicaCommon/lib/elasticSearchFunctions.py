@@ -748,9 +748,15 @@ def connect_and_remove_backlog_transfer_files(uuid):
 def connect_and_remove_sip_transfer_files(uuid):
     return connect_and_remove_transfer_files(uuid, 'sip')
 
-def connect_and_remove_transfer_files(uuid, unit_type):
-    # get file UUIDs for each file in the SIP
-    sql = "SELECT fileUUID from Files WHERE " + unit_type + "UUID='" + MySQLdb.escape_string(uuid) + "'"
+def connect_and_remove_transfer_files(uuid, unit_type = None):
+    
+    # if unit_type is not set, just query both sipUUID and transferUUID columns, the uuid is always
+    # unique so we don't really care what the unit type is
+    if unit_type is None:
+        sql = "SELECT fileUUID from Files where transferUUID='" + MySQLdb.escape_string(uuid) + "' or sipUUID='" + MySQLdb.escape_string(uuid) + "'"
+    else:
+        # get file UUIDs for each file in the SIP
+        sql = "SELECT fileUUID from Files WHERE " + unit_type + "UUID='" + MySQLdb.escape_string(uuid) + "'"
 
     rows = databaseInterface.queryAllSQL(sql)
 
