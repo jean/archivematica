@@ -748,26 +748,25 @@ def connect_and_remove_backlog_transfer_files(uuid):
 def connect_and_remove_sip_transfer_files(uuid):
     return connect_and_remove_transfer_files(uuid, 'sip')
 
-def connect_and_remove_transfer_files(uuid, unit_type = None):
-    
-    # if unit_type is not set, just query both sipUUID and transferUUID columns, the uuid is always
-    # unique so we don't really care what the unit type is
-    if unit_type is None:
-        sql = "SELECT fileUUID from Files where transferUUID='" + MySQLdb.escape_string(uuid) + "' or sipUUID='" + MySQLdb.escape_string(uuid) + "'"
+def connect_and_remove_transfer_files(uuid, unit_type=None):
+    if unit_type == 'transfer':
+        transfers = [uuid]
     else:
-        # get file UUIDs for each file in the SIP
-        sql = "SELECT fileUUID from Files WHERE " + unit_type + "UUID='" + MySQLdb.escape_string(uuid) + "'"
+        sql = "SELECT transferUUID FROM Files WHERE transferUUID=%s OR sipUUID=%s"
+        transfers = list({f[0] for f in databaseInterface.queryAllSQL(sql, (uuid, uuid))})
 
-    rows = databaseInterface.queryAllSQL(sql)
-
-    if len(rows) > 0:
+    if len(transfers) > 0:
         conn = connect_and_create_index('transfers')
 
-        # cycle through file UUIDs and delete files from transfer backlog
-        for row in rows:
-            document_id = _document_ids_from_field_query(conn, 'transfers', ['transferfile'],  'fileuuid', row[0])
-            if document_id:
-                conn.delete('transfers', 'transferfile', document_id[0])
+        for transfer in transfers:
+            files = _document_ids_from_field_query(conn, 'transfers', ['transferfile'], 'sipuuid', transfer)
+            if len(files) > 0:
+                for f in files:
+                    conn.delete('transfers', 'transferfile', f)
+    else:
+        if not unit_type:
+            unit_type = 'transfer or SIP'
+        logging.warning("No transfers found for %s %s", unit_type, uuid)
 
 def delete_aip(uuid):
     return delete_matching_documents('aips', 'aip', 'uuid', uuid)
