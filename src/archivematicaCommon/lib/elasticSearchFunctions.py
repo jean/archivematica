@@ -428,16 +428,6 @@ def index_mets_file_metadata(conn, uuid, metsFilePath, index, type, sipName, bac
         'f': 'http://hul.harvard.edu/ois/xml/ns/fits/fits_output',
     }
 
-    # TODO add a conditional to toggle this
-    remove_tool_output_from_mets(tree)
-
-    # get SIP-wide dmdSec
-    dmdSec = root.findall("m:dmdSec/m:mdWrap/m:xmlData", namespaces=nsmap)
-    dmdSecData = {}
-    for item in dmdSec:
-        xml = ElementTree.tostring(item)
-        dmdSecData = xmltodict.parse(xml)
-
     # Extract isPartOf (for AIPs) or identifier (for AICs) from DublinCore
     dublincore = root.find('m:dmdSec/m:mdWrap/m:xmlData/dc:dublincore', namespaces=nsmap)
     aic_identifier = None
@@ -460,10 +450,6 @@ def index_mets_file_metadata(conn, uuid, metsFilePath, index, type, sipName, bac
         'fileExtension': '',
         'isPartOf': is_part_of,
         'AICID': aic_identifier,
-        'METS': {
-            'dmdSec': rename_dict_keys_with_child_dicts(normalize_dict_values(dmdSecData)),
-            'amdSec': {},
-        },
         'origin': getDashboardUUID(),
     }
 
@@ -494,10 +480,6 @@ def index_mets_file_metadata(conn, uuid, metsFilePath, index, type, sipName, bac
             amdSecInfo = root.find("m:amdSec[@ID='{}']".format(admID), namespaces=nsmap)
             fileUUID = amdSecInfo.findtext("m:techMD/m:mdWrap/m:xmlData/p:object/p:objectIdentifier/p:objectIdentifierValue", namespaces=nsmap)
 
-            # Index amdSec information
-            xml = ElementTree.tostring(amdSecInfo)
-            indexData['METS']['amdSec'] = rename_dict_keys_with_child_dicts(normalize_dict_values(xmltodict.parse(xml)))
-
         indexData['FILEUUID'] = fileUUID
 
         # Get file path from FLocat and extension
@@ -513,10 +495,6 @@ def index_mets_file_metadata(conn, uuid, metsFilePath, index, type, sipName, bac
 
         if backup_to_mysql:
             backup_indexed_document(result, indexData, index, type)
-
-        # Reset fileData['METS']['amdSec'], since it is updated in the loop
-        # above. See http://stackoverflow.com/a/3975388 for explanation
-        fileData['METS']['amdSec'] = {}
 
     print 'Indexed AIP files and corresponding METS XML.'
 
