@@ -241,6 +241,7 @@ def set_up_mapping(conn, index):
         mapping = {
             'filename'     : {'type': 'string'},
             'relative_path': {'type': 'string'},
+            'original_path': {'type': 'string'},
             'fileuuid'     : machine_readable_field_spec,
             'sipuuid'      : machine_readable_field_spec,
             'accessionid'  : machine_readable_field_spec,
@@ -590,12 +591,13 @@ def index_transfer_files(conn, uuid, pathToTransfer, index, type):
             # Get file UUID
             file_uuid = ''
             relative_path = filepath.replace(pathToTransfer, '%transferDirectory%')
-            sql = "SELECT fileUUID FROM Files WHERE currentLocation='{}' AND transferUUID='{}';".format(
+            sql = "SELECT fileUUID, originalLocation FROM Files WHERE currentLocation='{}' AND transferUUID='{}';".format(
                 MySQLdb.escape_string(relative_path),
                 MySQLdb.escape_string(uuid))
             rows = databaseInterface.queryAllSQL(sql)
             if len(rows) > 0:
                 file_uuid = rows[0][0]
+                original_path = rows[0][1]
 
             # Get file path info
             relative_path = relative_path.replace('%transferDirectory%', transfer_name+'/')
@@ -608,7 +610,8 @@ def index_transfer_files(conn, uuid, pathToTransfer, index, type):
                 # TODO Index Backlog Location UUID?
                 indexData = {
                   'filename'     : filename,
-                  'relative_path' : relative_path,
+                  'relative_path': relative_path,
+                  'original_path': original_path,
                   'fileuuid'     : file_uuid,
                   'sipuuid'      : uuid,
                   'accessionid'  : accession_id,
