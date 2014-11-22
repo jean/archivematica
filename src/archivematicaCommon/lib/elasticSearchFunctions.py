@@ -310,6 +310,10 @@ def connect_and_index_aip(uuid, name, filePath, pathToMETS, size=None, aips_in_a
             aic_identifier = dublincore.findtext('dc:identifier', namespaces=nsmap)
         is_part_of = dublincore.findtext('dc:isPartOf', namespaces=nsmap)
 
+    sql = """SELECT accessionID FROM Transfers WHERE transferUUID IN (SELECT transferUUID FROM Files WHERE sipUUID=%s)"""
+    accession_ids = databaseInterface.queryAllSQL(sql, (uuid,))
+    accession_ids = [r[0] for r in results if r[0]]
+
     aipData = {
         'uuid': uuid,
         'name': name,
@@ -320,6 +324,7 @@ def connect_and_index_aip(uuid, name, filePath, pathToMETS, size=None, aips_in_a
         'AICID': aic_identifier,
         'isPartOf': is_part_of,
         'countAIPsinAIC': aips_in_aic,
+        'accession_ids': accession_ids,
     }
     wait_for_cluster_yellow_status(conn)
     try_to_index(conn, aipData, 'aips', 'aip')
