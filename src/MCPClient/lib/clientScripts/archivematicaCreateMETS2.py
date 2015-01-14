@@ -780,7 +780,7 @@ def build_arranged_structmap(original_structmap):
     # not have intellectual arrangement, so don't need to be
     # represented in this structMap.
     for label in ('submissionDocumentation', 'metadata'):
-        div = structmap.find('.//mets:div[@LABEL="{}"]'.format(label), namespaces=ns.NSMAP)
+        div = objects.find('.mets:div[@LABEL="{}"]'.format(label), namespaces=ns.NSMAP)
         objects.remove(div)
 
     # Handle objects level of description separately, since tag paths are relative to objects
