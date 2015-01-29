@@ -36,7 +36,7 @@ import archivematicaXMLNamesSpace as ns
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings.common'
 sys.path.append("/usr/share/archivematica/dashboard")
 from django.contrib.auth.models import User
-from main.models import Agent, Derivation, DublinCore, Event, File, FileID, FPCommandOutput, SIP, Transfer
+from main.models import Agent, Derivation, DublinCore, Event, File, FileID, FPCommandOutput, SIP, SIPArrange, Transfer
 
 from archivematicaCreateMETSMetadataCSV import parseMetadata
 from archivematicaCreateMETSRights import archivematicaGetRights
@@ -762,9 +762,7 @@ def createFileSec(directoryPath, parentDiv):
     return structMapDiv
 
 def build_arranged_structmap(original_structmap):
-    sql = """SELECT arrange_path, level_of_description FROM main_siparrange
-        WHERE sip_id = '{}'""".format(fileGroupIdentifier)
-    tag_dict = dict(databaseInterface.queryAllSQL(sql))
+    tag_dict = dict(SIPArrange.objects.filter(sip_id=fileGroupIdentifier).values_list('arrange_path', 'level_of_description'))
     if len(tag_dict) < 1:
         return
 
