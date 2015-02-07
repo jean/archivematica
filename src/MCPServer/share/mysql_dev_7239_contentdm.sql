@@ -34,3 +34,6 @@ SET @upload_type_choice_msc = '9514865d-7ed6-4184-b65f-a99d041e291d' COLLATE utf
 INSERT INTO MicroServiceChains (pk, startingLink, description) VALUES (@upload_type_choice_msc, @upload_type_choice_mscl, 'Upload DIP to CONTENTdm');
 UPDATE MicroServiceChainChoice SET chainAvailable=@upload_type_choice_msc WHERE pk='1b408994-ac47-4166-8a9b-4ef4bde09474';
 
+-- Remove direct upload option
+DELETE FROM MicroServiceChainChoice WHERE pk='6001ab96-b9b3-41cc-9b58-12be0536588c';
+
