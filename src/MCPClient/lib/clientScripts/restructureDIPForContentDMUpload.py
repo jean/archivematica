@@ -40,8 +40,8 @@ from archivematicaFunctions import normalizeNonDcElementName
 
 # Create the output dir for the CONTENTdm DIP and return the resulting path.
 # importMethod is either 'projectclient' or 'directupload'.
-def prepareOutputDir(outputDipDir, importMethod, dipUuid):
-    outputDipDir = os.path.join(outputDipDir, 'CONTENTdm', importMethod, dipUuid)
+def prepareOutputDir(outputDipDir, dipUuid):
+    outputDipDir = os.path.join(outputDipDir, 'CONTENTdm', dipUuid)
     # Check for and then delete a subdirectory named after the current package. We always want
     # a clean output directory for the import package.
     if os.path.exists(outputDipDir):
@@ -891,7 +891,7 @@ if __name__ == '__main__':
     
     # Use %watchDirectoryPath%uploadedDIPs as the output directory for the directupload and 
     # projectclient output. Also create a 'CONTENTdm' subdirectory for DIPs created by this microservice.
-    outputDipDir = prepareOutputDir(args.outputDir, args.ingestFormat, args.uuid)
+    outputDipDir = prepareOutputDir(args.outputDir, args.uuid)
 
     # Perform some preliminary validation on the argument values.
     if not os.path.exists(inputDipDir):
