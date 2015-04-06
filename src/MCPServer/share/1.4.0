@@ -1,0 +1,173 @@
+-- mysql_dev_7464_processing_directory
+
+-- Insert a "move to processing directory" immediately after "create tree";
+-- this ensures that the transfer is not inside a watched directory when the
+-- name is sanitized.
+-- Without this, it's possible for the newly-named microservice to be picked up
+-- as a new transfer, causing it to run through the microservice chain links
+-- in this watched directory twice.
+INSERT INTO StandardTasksConfigs (pk, requiresOutputLock, execute, arguments) VALUES ('cb6cd728-fe54-4a50-a6cc-1c5bd9fa1198', 0, 'moveTransfer_v0.0', '"%SIPDirectory%" "%processingDirectory%." "%SIPUUID%" "%sharedPath%"');
+INSERT INTO TasksConfigs (pk, taskType, taskTypePKReference, description) VALUES ('9f7029af-739d-4ec1-840d-b92d1d30f0c7', '36b2e239-4a57-4aa5-8ebc-7a29139baca6', 'cb6cd728-fe54-4a50-a6cc-1c5bd9fa1198', 'Move to processing directory');
+INSERT INTO MicroServiceChainLinks(pk, microserviceGroup, defaultExitMessage, currentTask, defaultNextChainLink) values ('6eca2676-b4ed-48d9-adb0-374e1d5c6e71', 'Generate transfer structure report', 'Failed', '9f7029af-739d-4ec1-840d-b92d1d30f0c7', '61c316a6-0a50-4f65-8767-1f44b1eeb6dd');
+INSERT INTO MicroServiceChainLinksExitCodes (pk, microServiceChainLink, exitCode, nextMicroServiceChainLink, exitMessage) VALUES ('310746b8-3580-40b7-a9ff-0730c8466fbb', '6eca2676-b4ed-48d9-adb0-374e1d5c6e71', 0, '56eebd45-5600-4768-a8c2-ec0114555a3d', 'Completed successfully');
+UPDATE MicroServiceChains SET startingLink='6eca2676-b4ed-48d9-adb0-374e1d5c6e71' WHERE pk='f6df8882-d076-441e-bb00-2f58d5eda098';
+
+-- end mysql_dev_7464
+
+-- mysql_dev_7478_processing_directory
+
+-- Move Transfer/SIP name cleanup log into correct location
+UPDATE StandardTasksConfigs
+	SET standardErrorFile='%SIPLogsDirectory%SIPnameCleanup.log'
+	WHERE standardErrorFile='%SIPDirectory%SIPnameCleanup.log';
+
+-- end mysql_dev_7478
+
+-- mysql_dev_7603_metadata_identification
+
+-- Continue processing if a file fails to be identified, like
+-- other identification services
+-- Fixes #7603
+--
+-- Metadata
+UPDATE MicroServiceChainLinks SET defaultNextChainLink='04493ab2-6cad-400d-8832-06941f121a96' WHERE pk='b2444a6e-c626-4487-9abc-1556dd89a8ae';
+-- Submission documentation
+UPDATE MicroServiceChainLinks SET defaultNextChainLink='33d7ac55-291c-43ae-bb42-f599ef428325' WHERE pk='1dce8e21-7263-4cc4-aa59-968d9793b5f2';
+
+-- end mysql_dev_7603
+
+-- mysql_dev_7606_atk_whitespace
+
+-- Add quotes around all the ATK parameters to handle whitespace in names
+
+UPDATE StandardTasksConfigs SET arguments = '--host="%host%" --port="%port%" --dbname="%dbname%" --dbuser="%dbuser%" --dbpass="%dbpass%" --atuser="%atuser%" --dip_location="%SIPDirectory%" --dip_name="%SIPName%" --dip_uuid="%SIPUUID%" --restrictions="%restrictions%" --object_type="%object_type%" --ead_actuate="%ead_actuate%" --ead_show="%ead_show%" --use_statement="%use_statement%" --uri_prefix="%uri_prefix%" --access_conditions="%access_conditions%" --use_conditions="%use_conditions%"' WHERE pk='a650921e-b754-4e61-9713-1457cf52e77d';
+
+-- end mysql_dev_7606
+
+-- mysql_dev_6488_aip_reingest
+
+-- Move MD reminder to start of submission docs
+SET @mdReminderMSCL = '54b73077-a062-41cc-882c-4df1eba447d9' COLLATE utf8_unicode_ci;
+SET @afterMdReminderMSCL = '77a7fa46-92b9-418e-aa88-fbedd4114c9f' COLLATE utf8_unicode_ci;
+SET @createMETSMSCL='ccf8ec5c-3a9a-404a-a7e7-8f567d3b36a0' COLLATE utf8_unicode_ci;
+UPDATE MicroServiceChainLinks SET defaultNextChainLink=@createMETSMSCL WHERE defaultNextChainLink=@mdReminderMSCL;
+UPDATE MicroServiceChainLinksExitCodes SET nextMicroServiceChainLink=@createMETSMSCL WHERE nextMicroServiceChainLink=@mdReminderMSCL;
+UPDATE MicroServiceChainLinks SET defaultNextChainLink=@mdReminderMSCL WHERE defaultNextChainLink=@afterMdReminderMSCL;
+UPDATE MicroServiceChainLinksExitCodes SET nextMicroServiceChainLink=@mdReminderMSCL WHERE nextMicroServiceChainLink=@afterMdReminderMSCL;
+UPDATE MicroServiceChains SET startingLink=@afterMdReminderMSCL WHERE startingLink=@createMETSMSCL;
+-- Set MD reminder group
+UPDATE MicroServiceChainLinks SET microserviceGroup='Add final metadata' WHERE pk IN (@mdReminderMSCL, 'eeb23509-57e2-4529-8857-9d62525db048', @afterMdReminderMSCL);
+
+-- Add jsonMetadataToCSV to during post-norm metadata processing 8c8bac29-4102-4fd2-9d0a-a3bd2e607566
+SET @metadataMSCL = 'b0ffcd90-eb26-4caf-8fab-58572d205f04' COLLATE utf8_unicode_ci;
+INSERT INTO TasksConfigs (pk, taskType, taskTypePKReference, description) VALUES ('38b99e0c-7066-49c4-82ed-d77bd7f019a1', '36b2e239-4a57-4aa5-8ebc-7a29139baca6', '44d3789b-10ad-4a9c-9984-c2fe503c8720', 'Process JSON metadata');
+INSERT INTO MicroServiceChainLinks(pk, microserviceGroup, defaultExitMessage, currentTask, defaultNextChainLink) VALUES (@metadataMSCL, 'Process metadata directory', 'Failed', '38b99e0c-7066-49c4-82ed-d77bd7f019a1', 'e4b0c713-988a-4606-82ea-4b565936d9a7');
+INSERT INTO MicroServiceChainLinksExitCodes (pk, microServiceChainLink, exitCode, nextMicroServiceChainLink, exitMessage) VALUES ('f1292ec3-4749-4e64-a924-c2089f97c583', @metadataMSCL, 0, 'e4b0c713-988a-4606-82ea-4b565936d9a7', 'Completed successfully');
+UPDATE MicroServiceChainLinksExitCodes SET nextMicroServiceChainLink=@metadataMSCL WHERE microServiceChainLink='ee438694-815f-4b74-97e1-8e7dde2cc6d5';
+UPDATE MicroServiceChainLinks SET defaultNextChainLink=@metadataMSCL WHERE pk='ee438694-815f-4b74-97e1-8e7dde2cc6d5';
+-- /ingest jsonMetadataToCSV
+
+-- end mysql_dev_6488
+
+-- mysql_dev_7137_models.sql
+
+-- These date fields used to use 0 as a "no date" value,
+-- but Django is not able to represent that value.
+-- Make them nullable and represent all non-dates as NULL instead.
+ALTER TABLE Files
+	MODIFY COLUMN removedTime timestamp NULL DEFAULT NULL;
+UPDATE Files SET removedTime=NULL WHERE removedTime=0;
+
+ALTER TABLE Tasks
+	MODIFY COLUMN startTime timestamp NULL DEFAULT NULL,
+	MODIFY COLUMN endTime timestamp NULL DEFAULT NULL;
+UPDATE Tasks SET startTime=NULL WHERE startTime=0;
+UPDATE Tasks SET endTime=NULL WHERE endTime=0;
+
+-- Update fileGroupType keys to Django's version instead of the column name
+UPDATE StandardTasksConfigs
+	SET arguments='--sipUUID "%SIPUUID%" --basePath "%SIPDirectory%" --xmlFile "%SIPDirectory%"metadata/submissionDocumentation/METS.xml --basePathString "transferDirectory" --fileGroupIdentifier "transfer_id"'
+	WHERE execute='createMETS_v0.0';
+UPDATE StandardTasksConfigs
+	SET arguments='--amdSec --baseDirectoryPath "%SIPDirectory%" --baseDirectoryPathString "SIPDirectory" --fileGroupIdentifier "%SIPUUID%" --fileGroupType "sip_id" --xmlFile "%SIPDirectory%METS.%SIPUUID%.xml"'
+	WHERE pk='0aec05d4-7222-4c28-89f4-043d20a812cc';
+UPDATE StandardTasksConfigs
+	SET arguments='--baseDirectoryPath "%SIPDirectory%" --baseDirectoryPathString "SIPDirectory" --fileGroupIdentifier "%SIPUUID%" --fileGroupType "sip_id" --xmlFile "%SIPDirectory%METS.%SIPUUID%.xml"'
+	WHERE pk='1f3f4e3b-2f5a-47a2-8d1c-27a6f1b94b95';
+UPDATE StandardTasksConfigs
+	set arguments='"%SIPDirectory%objects/metadata/" "%SIPUUID%" "%date%" "%taskUUID%" "SIPDirectory" "sip_id" "%SIPDirectory%"'
+	WHERE pk='58b192eb-0507-4a83-ae5a-f5e260634c2a';
+UPDATE StandardTasksConfigs
+	set arguments='"%SIPDirectory%objects/submissionDocumentation/" "%SIPUUID%" "%date%" "%taskUUID%" "SIPDirectory" "sip_id" "%SIPDirectory%"'
+	WHERE pk='ad65bf76-3491-4c3d-afb0-acc94ff28bee';
+UPDATE StandardTasksConfigs
+	SET arguments='"%SIPObjectsDirectory%" "%SIPUUID%" "%date%" "%taskUUID%" "transferDirectory" "transfer_id" "%SIPDirectory%"'
+	WHERE pk IN ('f368a36d-2b27-4f08-b662-2828a96d189a', '80759ad1-c79a-4c3b-b255-735c28a50f9e');
+UPDATE StandardTasksConfigs
+	SET arguments='"%SIPObjectsDirectory%attachments/" "%SIPUUID%" "%date%" "%taskUUID%" "transferDirectory" "transfer_id" "%SIPDirectory%"'
+	WHERE pk='89b4d447-1cfc-4bbf-beaa-fb6477b00f70';
+
+-- end mysql_dev_7137
+
+-- mysql_dev_7424_identifiers_in_es
+
+-- Compressed AIP path no longer needed in indexAIP;
+-- instead pass the SIP directory, which contains the metadata files
+UPDATE StandardTasksConfigs SET arguments='"%SIPUUID%" "%SIPName%" "%SIPDirectory%" "%SIPType%"' WHERE pk='81f36881-9e54-4c75-a5b2-838cfb2ca228';
+
+-- Don't delete the AIP METS, to avoid needing to re-extract it from the AIP
+-- during indexAIP.
+UPDATE StandardTasksConfigs SET arguments='-R "%SIPDirectory%%SIPName%-%SIPUUID%" "%SIPLogsDirectory%" "%SIPObjectsDirectory%" "%SIPDirectory%thumbnails/"' WHERE pk='d12b6b59-1f1c-47c2-b1a3-2bf898740eae';
+UPDATE StandardTasksConfigs SET arguments='-R "%SIPLogsDirectory%" "%SIPObjectsDirectory%" "%SIPDirectory%thumbnails/"' WHERE pk='d17b25c7-f83c-4862-904b-8074150b1395';
+
+-- Copies submission documentation back into the root of the SIP directory,
+-- so it's available to be used by indexAIP without extraction from
+-- a compressed AIP.
+INSERT INTO StandardTasksConfigs (pk, requiresOutputLock, execute, arguments) VALUES ('919dfbcd-b328-4a7e-9340-569a9d8859df', 0, 'copySubmissionDocs_v0.0', '"%SIPDirectory%" "%SIPName%-%SIPUUID%"');
+INSERT INTO TasksConfigs (pk, taskType, taskTypePKReference, description) VALUES ('2894f4ea-0d11-431f-a7de-c2f765bd55a6', '36b2e239-4a57-4aa5-8ebc-7a29139baca6', '919dfbcd-b328-4a7e-9340-569a9d8859df', 'Copy submission documentation');
+INSERT INTO MicroServiceChainLinks(pk, microserviceGroup, defaultExitMessage, currentTask, defaultNextChainLink) values ('0a63befa-327d-4655-a021-341b639ee9ed', 'Prepare AIP', 'Failed', '2894f4ea-0d11-431f-a7de-c2f765bd55a6', '7d728c39-395f-4892-8193-92f086c0546f');
+INSERT INTO MicroServiceChainLinksExitCodes (pk, microServiceChainLink, exitCode, nextMicroServiceChainLink, exitMessage) VALUES ('264fdc03-9102-4eb6-b671-09e48b136d27', '0a63befa-327d-4655-a021-341b639ee9ed', 0, '0915f727-0bc3-47c8-b9b2-25dc2ecef2bb', 'Completed successfully');
+UPDATE MicroServiceChainLinksExitCodes SET nextMicroServiceChainLink='0a63befa-327d-4655-a021-341b639ee9ed' WHERE microServiceChainLink='d55b42c8-c7c5-4a40-b626-d248d2bd883f';
+
+-- end mysql_dev_7424
+
+-- mysql_dev_7714_transfer_mets
+
+-- Insert a new microservice, after package extraction, which creates
+-- a second structMap documenting the final state of the transfer.
+SET @characterizeExtractMSCL='303a65f6-a16f-4a06-807b-cb3425a30201' COLLATE utf8_unicode_ci;
+SET @processedStructmapSTC='fefd486c-e6ce-4229-ac3d-cf53e66f46cc' COLLATE utf8_unicode_ci;
+SET @processedStructmapTC='275b3640-68a6-4c4e-adc1-888ea3fdfba5' COLLATE utf8_unicode_ci;
+SET @processedStructmapMSCL='307edcde-ad10-401c-92c4-652917c993ed' COLLATE utf8_unicode_ci;
+
+INSERT INTO StandardTasksConfigs (pk, execute, arguments, requiresOutputLock) VALUES (@processedStructmapSTC, 'createProcessedStructmap_v0.0', '--sipUUID "%SIPUUID%" --basePath "%SIPDirectory%" --xmlFile "%SIPDirectory%"metadata/submissionDocumentation/METS.xml --basePathString "transferDirectory" --fileGroupIdentifier "transfer_id"', 0);
+INSERT INTO TasksConfigs (pk, taskType, taskTypePKReference, description) VALUES (@processedStructmapTC, '36b2e239-4a57-4aa5-8ebc-7a29139baca6', @processedStructmapSTC, 'Add processed structMap to METS.xml document');
+INSERT INTO MicroServiceChainLinks (pk, currentTask, defaultNextChainLink, microServiceGroup, defaultExitMessage) VALUES (@processedStructmapMSCL, @processedStructmapTC, '61c316a6-0a50-4f65-8767-1f44b1eeb6dd', 'Update METS.xml document', 'Failed');
+UPDATE MicroServiceChains SET startingLink=@processedStructmapMSCL WHERE startingLink='303a65f6-a16f-4a06-807b-cb3425a30201';
+UPDATE MicroServiceChainLinksExitCodes SET nextMicroServiceChainLink=@processedStructmapMSCL WHERE microServiceChainLink='b944ec7f-7f99-491f-986d-58914c9bb4fa' AND exitCode=1;
+UPDATE MicroServiceChainLinksExitCodes SET nextMicroServiceChainLink=@processedStructmapMSCL WHERE microServiceChainLink='aaa929e4-5c35-447e-816a-033a66b9b90b';
+UPDATE MicroServiceChainLinks SET defaultNextChainLink=@processedStructmapMSCL WHERE pk='aaa929e4-5c35-447e-816a-033a66b9b90b';
+UPDATE MicroServiceChainLinks SET defaultNextChainLink=@processedStructmapMSCL WHERE pk='1cb7e228-6e94-4c93-bf70-430af99b9264';
+INSERT INTO MicroServiceChainLinksExitCodes (microServiceChainLink, exitCode, nextMicroServiceChainLink) VALUES (@processedStructmapMSCL, 0, @characterizeExtractMSCL);
+
+-- end mysql_dev_7714
+
+-- mysql_dev_7690_recursive_extraction
+
+-- Add check for extractable files after aaa9
+SET @hasPackageSTC = '93039c6d-5ef7-4a95-bf07-5f89c8886808' COLLATE utf8_unicode_ci;
+SET @newPackageMSCL = 'bd792750-a55b-42e9-903a-8c898bb77df1' COLLATE utf8_unicode_ci;
+SET @continueMSCL = '307edcde-ad10-401c-92c4-652917c993ed' COLLATE utf8_unicode_ci;
+INSERT INTO TasksConfigs (pk, taskType, taskTypePKReference, description) VALUES ('cadd5e12-82b2-43ec-813e-85cd42b2d511', '36b2e239-4a57-4aa5-8ebc-7a29139baca6', @hasPackageSTC, 'Determine if transfer still contains packages');
+INSERT INTO MicroServiceChainLinks(pk, microserviceGroup, defaultExitMessage, currentTask, defaultNextChainLink) VALUES (@newPackageMSCL, 'Extract packages', 'Failed', 'cadd5e12-82b2-43ec-813e-85cd42b2d511', @continueMSCL);
+-- If not continue
+INSERT INTO MicroServiceChainLinksExitCodes (pk, microServiceChainLink, exitCode, nextMicroServiceChainLink, exitMessage) VALUES ('3ba57fba-c1c2-4898-a5ae-9052dc5dd018', @newPackageMSCL, 1, @continueMSCL, 'Completed successfully');
+-- If yes, return to 1cb7 extract contents
+INSERT INTO MicroServiceChainLinksExitCodes (pk, microServiceChainLink, exitCode, nextMicroServiceChainLink, exitMessage) VALUES ('f8597642-7254-43a7-8857-8ca053d0fba5', @newPackageMSCL, 0, '1cb7e228-6e94-4c93-bf70-430af99b9264', 'Completed successfully');
+
+UPDATE MicroServiceChainLinksExitCodes SET nextMicroServiceChainLink=@newPackageMSCL WHERE microServiceChainLink='aaa929e4-5c35-447e-816a-033a66b9b90b';
+UPDATE MicroServiceChainLinks SET defaultNextChainLink=@newPackageMSCL WHERE pk='aaa929e4-5c35-447e-816a-033a66b9b90b';
+
+UPDATE StandardTasksConfigs SET arguments='"%IDCommand%" "%relativeLocation%" "%fileUUID%" --disable-reidentify' WHERE pk='9c3680a5-91cb-413f-af4e-d39c3346f8db';
+
+-- end mysql_dev_7690
