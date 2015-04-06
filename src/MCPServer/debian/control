@@ -1,7 +1,7 @@
 Source: archivematica-mcp-server
 Section: utils
 Priority: extra
-Maintainer: Austin Trask <austin@artefactual.com>
+Maintainer: Artefactual Systems <sysadmin@artefactual.com>
 Build-Depends: debhelper (>= 9)
 Standards-Version: 3.9.3
 Homepage: http://archivematica.org
