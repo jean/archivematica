@@ -169,7 +169,7 @@ class ArchivesSpaceClient(object):
                 'id': record['record_uri'],
                 'sortPosition': level,
                 'identifier': identifier,
-                'title': record['title'],
+                'title': record.get('title', ''),
                 'dates': dates,
                 'levelOfDescription': record['level']
             }
@@ -199,7 +199,7 @@ class ArchivesSpaceClient(object):
                 'id': record['uri'],
                 'sortPosition': level,
                 'identifier': record.get('component_id', ''),
-                'title': record['title'],
+                'title': record.get('title', ''),
                 'dates': dates,
                 'levelOfDescription': record['level']
             }
@@ -311,7 +311,7 @@ class ArchivesSpaceClient(object):
                 'id': record['uri'],
                 'sortPosition': 1,
                 'identifier': record.get('component_id', ''),
-                'title': record['title'],
+                'title': record.get('title', ''),
                 'dates': dates,
                 'levelOfDescription': record['level']
             }
