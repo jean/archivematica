@@ -40,7 +40,7 @@ def getDictArray(post, name):
     return dic
 
 
-def list_records(client, request, query, page_number, sort_by, search_params, list_redirect_target, uuid):
+def list_records(client, request, query, page_number, sort_by, search_params, list_redirect_target, reset_url, uuid):
     resources = LazyPagedSequence(lambda page, page_size: client.find_collections(search_pattern=query, page=page, page_size=page_size, sort_by=sort_by), PAGE_SIZE, client.count_collections(query))
     page = helpers.pager(resources, PAGE_SIZE, page_number)
 
@@ -65,7 +65,7 @@ def pairs_saved_response(pairs_saved):
     )
 
 
-def render_resource(client, request, resource_id, query, page, sort_by, search_params, match_redirect_target, resource_detail_template, uuid):
+def render_resource(client, request, resource_id, query, page, sort_by, search_params, match_redirect_target, resource_detail_template, reset_url, uuid):
     resource_data = client.get_resource_component_and_children(
         resource_id,
         'collection',
@@ -85,7 +85,7 @@ def render_resource(client, request, resource_id, query, page, sort_by, search_p
         return render(request, resource_detail_template, locals())
 
 
-def render_resource_component(client, request, resource_component_id, query, page, sort_by, search_params, match_redirect_target, resource_detail_template, uuid):
+def render_resource_component(client, request, resource_component_id, query, page, sort_by, search_params, match_redirect_target, resource_detail_template, reset_url, uuid):
     resource_component_data = client.get_resource_component_and_children(
         resource_component_id,
         'description',
@@ -107,7 +107,7 @@ def render_resource_component(client, request, resource_component_id, query, pag
         return render(request, resource_detail_template, locals())
 
 
-def match_dip_objects_to_resource_levels(client, request, resource_id, match_template, parent_id, parent_url, uuid, matches=[]):
+def match_dip_objects_to_resource_levels(client, request, resource_id, match_template, parent_id, parent_url, reset_url, uuid, matches=[]):
     # load object relative paths
     object_path_json = simplejson.JSONEncoder().encode(
         ingest_upload_atk_get_dip_object_paths(uuid)
@@ -122,7 +122,7 @@ def match_dip_objects_to_resource_levels(client, request, resource_id, match_tem
     return render(request, match_template, locals())
 
 
-def match_dip_objects_to_resource_component_levels(client, request, resource_component_id, match_template, parent_id, parent_url, uuid, matches=[]):
+def match_dip_objects_to_resource_component_levels(client, request, resource_component_id, match_template, parent_id, parent_url, reset_url, uuid, matches=[]):
     # load object relative paths
     object_path_json = simplejson.JSONEncoder().encode(
         ingest_upload_atk_get_dip_object_paths(uuid)
