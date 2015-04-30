@@ -373,7 +373,8 @@ class ArchivesSpaceClient(object):
         language = parent_record.get('language', '')
 
         if not title:
-            title = parent_record.get('title', '')
+            filename = os.path.basename(uri) if uri is not None else 'Untitled'
+            title = parent_record.get('title', filename)
 
         if identifier is None:
             identifier = os.path.dirname(uri)
