@@ -178,6 +178,10 @@ INSTALLED_APPS = (
     'tastypie',
 )
 
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+
+CONN_MAX_AGE = 60
+
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = '/tmp/dashboard-django'
 
@@ -257,19 +261,6 @@ LOGIN_EXEMPT_URLS  = [
   r'^administration/accounts/login',
   r'^api'
 ]
-
-# Django debug toolbar
-try:
-    import debug_toolbar
-except:
-    pass
-else:
-    MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware',)
-    INSTALLED_APPS += ('debug_toolbar',)
-    INTERNAL_IPS = ('127.0.0.1', '192.168.82.1', '10.0.2.2')
-    DEBUG_TOOLBAR_CONFIG = {
-        'INTERCEPT_REDIRECTS': False,
-    }
 
 # Dashboard internal settings
 MCP_SERVER = ('127.0.0.1', 4730) # localhost:4730

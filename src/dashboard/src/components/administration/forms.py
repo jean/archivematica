@@ -43,7 +43,7 @@ class AgentForm(forms.ModelForm):
 
     class Meta:
         model = models.Agent
-        exclude = ('identifiertype')
+        exclude = ('identifiertype',)
 
 class SettingsForm(forms.Form):
     def __init__(self, *args, **kwargs):
