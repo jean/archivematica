@@ -15,9 +15,16 @@ SET @d4 = '14a0678f-9c2a-4995-a6bd-5acd141eeef1' COLLATE utf8_unicode_ci;
 DELETE FROM MicroServiceChainLinksExitCodes WHERE microServiceChainLink IN (@d1, @d2, @d3, @d4);
 
 -- Update microserviceGroups
+UPDATE MicroServiceChainLinks SET microserviceGroup='Reingest AIP' WHERE pk IN ('9520386f-bb6d-4fb9-a6b6-5845ef39375f', '77c722ea-5a8f-48c0-ae82-c66a3fa8ca77', 'c103b2fb-9a6b-4b68-8112-b70597a6cd14', '60b0e812-ebbe-487e-810f-56b1b6fdd819', '31fc3f66-34e9-478f-8d1b-c29cd0012360', 'e4e19c32-16cc-4a7f-a64d-a1f180bdb164', '83d5e887-6f7c-48b0-bd81-e3f00a9da772');
 UPDATE MicroServiceChainLinks SET microserviceGroup='Process manually normalized files' WHERE pk IN ('ab0d3815-a9a3-43e1-9203-23a40c00c551', '91ca6f1f-feb5-485d-99d2-25eed195e330', '10c40e41-fb10-48b5-9d01-336cd958afe8', 'e76aec15-5dfa-4b14-9405-735863e3a6fa', '9e9b522a-77ab-4c17-ab08-5a4256f49d59', 'a1b65fe3-9358-479b-93b9-68f2b5e71b2b', '78b7adff-861d-4450-b6dd-3fabe96a849e');
 UPDATE MicroServiceChainLinks SET microserviceGroup='Generate AIP METS' WHERE pk IN ('ccf8ec5c-3a9a-404a-a7e7-8f567d3b36a0', '53e14112-21bb-46f0-aed3-4e8c2de6678f', '88807d68-062e-4d1a-a2d5-2d198c88d8ca');
 UPDATE MicroServiceChainLinks SET microserviceGroup='Add final metadata' WHERE pk IN ('c168f1ee-5d56-4188-8521-09f0c5475133', 'f060d17f-2376-4c0b-a346-b486446e46ce', '54b73077-a062-41cc-882c-4df1eba447d9', 'eeb23509-57e2-4529-8857-9d62525db048');
+-- Update Watched Directory
+UPDATE WatchedDirectories SET watchedDirectoryPath = '%watchDirectoryPath%system/reingestAIP/' WHERE watchedDirectoryPath='%watchDirectoryPath%system/createDIPFromAIP/';
+-- Rename DIPfromAIP
+UPDATE TasksConfigs SET description = 'Approve AIP reingest' WHERE pk='c450501a-251f-4de7-acde-91c47cf62e36';
+UPDATE MicroServiceChains SET description='Approve AIP reingest' WHERE startingLink='77c722ea-5a8f-48c0-ae82-c66a3fa8ca77';
+UPDATE MicroServiceChains SET description='AIP reingest approval chain' WHERE startingLink='9520386f-bb6d-4fb9-a6b6-5845ef39375f';
 -- Move Verify Checksums to after processing metadata dir
 SET @verifychecksumMSCL = '88807d68-062e-4d1a-a2d5-2d198c88d8ca' COLLATE utf8_unicode_ci;
 UPDATE MicroServiceChainLinks SET microserviceGroup='Verify checksums' WHERE pk IN (@verifychecksumMSCL);
@@ -114,6 +121,20 @@ DELETE FROM MicroServiceChains WHERE startingLink=@accessNormMSCL;
 UPDATE TasksConfigsSetUnitVariable SET microServiceChainLink=@accessNormMSCL WHERE microServiceChainLink=@d1;
 DELETE FROM MicroServiceChainLinksExitCodes WHERE microServiceChainLink=@d1;
 
+
+-- Add processingMCP
+INSERT INTO MicroServiceChainLinks(pk, microserviceGroup, defaultExitMessage, currentTask, defaultNextChainLink) VALUES ('ff516d0b-2bba-414c-88d4-f3575ebf050a', 'Reingest AIP', 'Failed', 'f89b9e0f-8789-4292-b5d0-4a330c0205e1', '7d728c39-395f-4892-8193-92f086c0546f');
+INSERT INTO MicroServiceChainLinksExitCodes (pk, microServiceChainLink, exitCode, nextMicroServiceChainLink, exitMessage) VALUES ('545f54cc-475c-4980-9dff-8f7e65ebaeba', 'ff516d0b-2bba-414c-88d4-f3575ebf050a', 0, '60b0e812-ebbe-487e-810f-56b1b6fdd819', 'Completed successfully');
+UPDATE MicroServiceChainLinksExitCodes SET nextMicroServiceChainLink='ff516d0b-2bba-414c-88d4-f3575ebf050a' WHERE microServiceChainLink='c103b2fb-9a6b-4b68-8112-b70597a6cd14';
+-- Redirect to typical normalization node
+UPDATE MicroServiceChainLinksExitCodes SET nextMicroServiceChainLink='5d6a103c-9a5d-4010-83a8-6f4c61eb1478' WHERE microServiceChainLink IN ('83d5e887-6f7c-48b0-bd81-e3f00a9da772', 'e4e19c32-16cc-4a7f-a64d-a1f180bdb164') AND exitCode=0;
+
+-- Don't use weird normalization node, remove unitVars for that
+SET @d1 = '29dece8e-55a4-4f2c-b4c2-365ab6376ceb' COLLATE utf8_unicode_ci;
+SET @d2 = '635ba89d-0ad6-4fc9-acc3-e6069dffdcd5' COLLATE utf8_unicode_ci;
+DELETE FROM MicroServiceChainLinksExitCodes WHERE microServiceChainLink IN (@d1, @d2);
+DELETE FROM MicroServiceChainLinks WHERE pk IN (@d1, @d2);
+
 -- Move MD reminder to start of submission docs
 SET @mdReminderMSCL = '54b73077-a062-41cc-882c-4df1eba447d9' COLLATE utf8_unicode_ci;
 SET @afterMdReminderMSCL = '77a7fa46-92b9-418e-aa88-fbedd4114c9f' COLLATE utf8_unicode_ci;
@@ -186,6 +207,9 @@ DELETE FROM MicroServiceChains WHERE startingLink IN (@d1, @d2, @d3, @d4, @d5);
 DELETE FROM MicroServiceChainLinksExitCodes WHERE microServiceChainLink IN (@d1, @d2, @d3, @d4, @d5);
 
 -- /Remove duplicated normalize for preservation chain
+
+-- Reject SIP should be the SIP chain, not transfer
+UPDATE MicroServiceChainChoice SET chainAvailable='a6ed697e-6189-4b4e-9f80-29209abc7937' WHERE choiceAvailableAtLink='9520386f-bb6d-4fb9-a6b6-5845ef39375f' AND chainAvailable='1b04ec43-055c-43b7-9543-bd03c6a778ba';
 
 -- Delete all TasksConfigs that don't have MicroServiceChainLinks pointing at them
 DELETE FROM TasksConfigs USING TasksConfigs LEFT OUTER JOIN MicroServiceChainLinks ON currentTask=TasksConfigs.pk WHERE MicroServiceChainLinks.pk is NULL;
