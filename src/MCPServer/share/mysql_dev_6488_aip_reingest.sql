@@ -31,6 +31,10 @@ UPDATE MicroServiceChainLinksExitCodes SET nextMicroServiceChainLink=@verifychec
 UPDATE MicroServiceChainLinks SET defaultNextChainLink='7d728c39-395f-4892-8193-92f086c0546f' WHERE pk=@verifychecksumMSCL;
 UPDATE MicroServiceChainLinksExitCodes SET nextMicroServiceChainLink='54b73077-a062-41cc-882c-4df1eba447d9' WHERE microServiceChainLink=@verifychecksumMSCL;
 
+-- Only one exit code for determine version
+DELETE FROM MicroServiceChainLinksExitCodes WHERE pk='7f2d5239-b464-4837-8e01-0fc43e31395d';
+UPDATE MicroServiceChainLinksExitCodes SET exitCode=0 WHERE pk='6e06fd5e-3892-4e79-b64f-069876bd95a1';
+
 -- Skip old file ID
 SET @moveToFileIDMSCL='a2173b55-abff-4d8f-97b9-79cc2e0a64fa' COLLATE utf8_unicode_ci;
 SET @moveToFileIDTC='8b846431-5da9-4743-906d-2cdc4e777f8f' COLLATE utf8_unicode_ci;
