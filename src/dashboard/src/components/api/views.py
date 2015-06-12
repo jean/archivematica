@@ -425,7 +425,7 @@ def start_reingest(request):
             LOGGER.debug('Reingest moving from %s to %s', source, dest)
             shutil.move(source, dest)
         except (shutil.Error, OSError) as e:
-            error = e.message or "Unable to move reingested AIP to start reingest."
+            error = e.strerror or "Unable to move reingested AIP to start reingest."
             LOGGER.warning('Unable to move reingested AIP to start reingest', exc_info=True)
         if error:
             response = {'error': True, 'message': error}

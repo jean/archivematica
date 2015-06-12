@@ -147,10 +147,11 @@ def parse_dc(sip_uuid, root):
         )
         print('Dublin Core:')
         for elem in dc_xml:
-            tag = elem.tag.replace(ns.dctermsBNS, '', 1)
+            tag = elem.tag.replace(ns.dctermsBNS, '', 1).replace(ns.dcBNS, '', 1)
             print(tag, elem.text)
             setattr(dc_model, DC_TERMS_MATCHING[tag], elem.text)
         dc_model.save()
+    return dc_model
 
 def parse_rights(sip_uuid, root):
     # Delete existing PREMIS Rights
